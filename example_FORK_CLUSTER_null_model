@@ -1,16 +1,16 @@
-#EXAMPLE OF A PARALLELIZED NULL MODEL WITH BETA.PAIR USING A FORK CLUSTER
+# EXAMPLE OF A PARALLELIZED NULL MODEL WITH BETA.PAIR USING A FORK CLUSTER
+# Note that FORK cluster are not permitted on Windows, only Linux or OS. This code was only tested on a Linus operating system. 
 
-
-#load new function
+# load new function
 # load the functional.betapart.core.modif function.
 source("https://raw.githubusercontent.com/RenatoHS/new.functional.betapart/master/functional.betapart.core.modif")
 set.seed(1)
 
-#trait data
+# trait data
 traits.test<-matrix( rnorm(11*3,mean=0,sd=1), 11, 3) 
 dimnames(traits.test)<-list(paste("sp",1:11,sep="") , c("Trait 1","Trait 2","Trait 3") ) 
 
-#community data
+# community data
 comm.test<-matrix(0,4,11,dimnames=list( c("A","B","C","D") , paste("sp",1:11,sep="") ) )
 comm.test["A",c(1,2,4,5)]<-1
 comm.test["B",c(1,3,8,9)]<-1
