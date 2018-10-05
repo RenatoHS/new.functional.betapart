@@ -1,0 +1,168 @@
+#EXAMPLE OF A PARALLELIZED NULL MODEL WITH BETA.PAIR USING A FORK CLUSTER
+
+
+#load new function
+# load the functional.betapart.core.modif function.
+source("https://raw.githubusercontent.com/RenatoHS/new.functional.betapart/master/functional.betapart.core.modif")
+set.seed(1)
+
+#trait data
+traits.test<-matrix( rnorm(11*3,mean=0,sd=1), 11, 3) 
+dimnames(traits.test)<-list(paste("sp",1:11,sep="") , c("Trait 1","Trait 2","Trait 3") ) 
+
+#community data
+comm.test<-matrix(0,4,11,dimnames=list( c("A","B","C","D") , paste("sp",1:11,sep="") ) )
+comm.test["A",c(1,2,4,5)]<-1
+comm.test["B",c(1,3,8,9)]<-1
+comm.test["C",c(6,7,10,11)]<-1
+comm.test["D",c(2,4,7,9)]<-1
+
+# required for registering the SNOW parallel backend with the foreach package.
+require(betapart)
+require(parallel)
+require(picante)
+
+# define number of cores (or use parallel::detectCores() to determine number of cores available in your machine)
+nc <- 4
+
+# create closter
+cl <- parallel:::makeForkCluster(nc)
+parallel::clusterEvalQ(cl, library(betapart))
+parallel::clusterEvalQ(cl, library(fastmatch))
+parallel::clusterEvalQ(cl, library(rcdd))
+parallel::clusterEvalQ(cl, library(picante))
+
+# define the number of permutations for the null model (the usual is 1000)
+nperm<-100
+
+#make sure that nperm/nc is a whole number so that all cores have the same number of permutations to work on
+
+# compute the observed pair-wise values of the functional dissimilarities indices
+test.score<-functional.betapart.core.vfinal(x = comm.test, traits = traits.test, multi = FALSE, warning.time = FALSE, 
+                                            return.details = FALSE, fbc.step = FALSE, 
+                                            core.ident = NULL)
+obs.pair.func.dis<-functional.beta.pair(x=test.score, index.family = "sorensen" )
+
+
+#number of possible pairs of sites
+pairs<-combn(nrow(comm.test),2)
+
+#create strings for each pair of site
+pair_names<-NULL
+for (i in 1:ncol(pairs)){
+  
+  pair_id<-paste(attr(obs.pair.func.dis$funct.beta.sim, "Labels")[pairs[1,i]],attr(obs.pair.func.dis$funct.beta.sim, "Labels")[pairs[2,i]],sep="-")
+  
+  pair_names<-c(pair_names, pair_id)
+  
+}
+
+# transform functional.beta.pair results into a matrix
+obs.pair.func.dis <- do.call(rbind,lapply(obs.pair.func.dis, function(x) c(x)))
+
+#set names for each pair of site using the set of strings created previsouly
+colnames(obs.pair.func.dis)<-pair_names
+
+# export necessary variables and functions to the cluster of cores
+parallel::clusterExport(cl=cl, c("nperm","nc", "comm.test", "traits.test",
+                                 "functional.betapart.core.vfinal" ),envir=environment())
+
+
+# execute mclapply function, which is the parallelized version of lapply. The resulting output will be a list
+# of the same lenght as (1:nc)
+null.pair.func.dis <-mclapply(1:nc, function(x){
+  
+  set.seed(x)
+  #number of tasks per core (i.e., number of permutations per core)
+  nt <- nperm/nc
+  
+  #create a list of lists where the results from "nt" permutations will be stored
+  null.pair.temp <- replicate(nt,list())
+  
+  # for each core "n" perform "nt" permutations
+  for (j in 1:nt) { 
+    print(j)
+    
+    #randomize community with chosen null model
+    #for this particular example we used the "independent swap algorithm" 
+    null.comm.test<-randomizeMatrix(comm.test ,null.model="independentswap",iterations=1000)
+    
+    # execute functional.betapart.core function identifying each "n" core with the core.ident argument 
+    # for external parallelization, make sure to set int.parallel to FALSE
+    null.test.score <- try(functional.betapart.core.vfinal(null.comm.test, traits = traits.test, multi = TRUE, warning.time = FALSE, 
+                                                           return.details = FALSE, fbc.step = FALSE, 
+                                                           core.ident = x),silent=TRUE)
+    
+    
+    #in this example there are a few combinations of species that the convex hull function does not work
+    #so we need to re-permute the community matrix 
+    while(inherits(null.test.score,"try-error")){
+      
+      
+      null.comm.test<-randomizeMatrix(comm.test ,null.model="independentswap",iterations=1000)
+      
+      # execute functional.betapart.core function identifying each "n" core with the core.ident argument 
+      null.test.score <- try(functional.betapart.core.vfinal(x = null.comm.test, traits = traits.test, multi = TRUE, warning.time = FALSE, 
+                                                             return.details = FALSE, fbc.step = FALSE, 
+                                                             core.ident = x),silent=TRUE)
+    }
+    # input null values in the temporary result matrix
+    null.pair.temp[[j]]<-functional.beta.pair(x=null.test.score, index.family = "sorensen" )
+    
+  }
+  #retrieve the results from each core
+  null.pair.temp
+}, mc.cores = nc)
+#stop cluster
+parallel::stopCluster(cl)
+
+#unlist the nested list output
+null.pair.func.dis<-unlist(null.pair.func.dis, recursive = FALSE)
+
+#transform the results from each permutation into a matrix
+null.pair.func.dis<-lapply(null.pair.func.dis, function(x) do.call(rbind,lapply(x, function(x) c(x))))
+
+#compute some statistics (mean, standard deviation and p-values of dissimilary metrics) for each pair of site
+mean.null.pair.func <-matrix(numeric(),ncol=ncol(obs.pair.func.dis),nrow=nrow(obs.pair.func.dis))
+sd.null.pair.func <-matrix(numeric(),ncol=ncol(obs.pair.func.dis),nrow=nrow(obs.pair.func.dis))
+p.pair.func.dis<-matrix(numeric(),ncol=ncol(obs.pair.func.dis),nrow=nrow(obs.pair.func.dis))
+
+#for each one of the 3 null dissimilarity metrics (SIN, SNE and SOR) 
+for (j in 1:nrow(obs.pair.func.dis)){
+  
+  #for each pair of sites
+  for (i in 1:ncol(obs.pair.func.dis)){
+    
+    #group the null values from each metric of each pair of site into into it's own matrix
+    null.pair.temp<-do.call(rbind,lapply(null.pair.func.dis, `[`,j,i)) 
+    
+    #compute mean of all null values
+    mean.null.pair.func[j,i]<-mean(null.pair.temp)
+    #compute standard deviation of all null values
+    sd.null.pair.func[j,i]<-sd(null.pair.temp)
+    #compute the p-values
+    p.pair.func.dis[j,i]<-(length(which(obs.pair.func.dis[j,i]<null.pair.temp))+1)/nperm
+    #the +1 is to take into account that the observed value is one of the possibilities
+  }
+}
+
+#compute standardized effect sizes
+ses.pair.func.dis<-(obs.pair.func.dis-mean.null.pair.func)/sd.null.pair.func
+
+#group all results
+res<-as.data.frame(matrix(numeric(),ncol=9,nrow=ncol(obs.pair.func.dis),
+                          dimnames = list(pair_names,c("obs.SIM","ses.SIM","p.SIM","obs.SNE","ses.SNE","p.SNE","obs.SOR","ses.SOR","p.SOR"))))
+
+res$obs.SIM<-obs.pair.func.dis[1,]
+res$obs.SNE<-obs.pair.func.dis[2,]
+res$obs.SOR<-obs.pair.func.dis[3,]
+
+res$ses.SIM<-ses.pair.func.dis[1,]
+res$ses.SNE<-ses.pair.func.dis[2,]
+res$ses.SOR<-ses.pair.func.dis[3,]
+
+res$p.SIM<-p.pair.func.dis[1,]
+res$p.SNE<-p.pair.func.dis[2,]
+res$p.SOR<-p.pair.func.dis[3,]
+
+res
