@@ -1,6 +1,26 @@
 # EXAMPLE OF A PARALLELIZED NULL MODEL WITH BETA.PAIR USING A FORK CLUSTER
 # Note that FORK clusters are not permitted on Windows, only on Linux or OS. This code was only tested on a Linux operating system. 
 
+############################################################################################################################################
+#
+# Code written by Renato Henriques-Silva
+
+#  Copyright GPL-2 2012 Renato Henriques-Silva
+#  http://www.gnu.org/licenses/gpl-2.0.txt
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+############################################################################################################################################
+
+
+
 # load new function
 # load the functional.betapart.core.modif function.
 source("https://raw.githubusercontent.com/RenatoHS/new.functional.betapart/master/functional.betapart.core.modif")
@@ -166,3 +186,4 @@ res$p.SNE <- p.pair.func.dis[2,]
 res$p.SOR <- p.pair.func.dis[3,]
 
 res
+########################################################################################################################################
