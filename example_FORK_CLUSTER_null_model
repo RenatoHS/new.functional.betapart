@@ -65,7 +65,7 @@ colnames(obs.pair.func.dis) <- pair_names
 
 # export necessary variables and functions to the cluster of cores
 parallel::clusterExport(cl = cl, c("nperm", "nc", "comm.test", "traits.test",
-                                 "functional.betapart.core.vfinal"), envir=environment())
+                                 "functional.betapart.core.modif"), envir=environment())
 
 
 # execute mclapply function, which is the parallelized version of lapply. The resulting output will be a list
