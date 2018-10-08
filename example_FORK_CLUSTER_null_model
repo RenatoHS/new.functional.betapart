@@ -38,7 +38,7 @@ nperm <- 100
 # make sure that nperm/nc is a whole number so that all cores have the same number of permutations to work on
 
 # compute the observed pair-wise values of the functional dissimilarities indices
-test.score <- functional.betapart.core.vfinal(x = comm.test, traits = traits.test, multi = FALSE, warning.time = FALSE, 
+test.score <- functional.betapart.core.modif(x = comm.test, traits = traits.test, multi = FALSE, warning.time = FALSE, 
                                             return.details = FALSE, fbc.step = FALSE, 
                                             core.ident = NULL)
 obs.pair.func.dis <- functional.beta.pair(x = test.score, index.family = "sorensen")
@@ -101,7 +101,7 @@ null.pair.func.dis <- mclapply(1:nc, function(x){
       null.comm.test <- randomizeMatrix(comm.test, null.model="independentswap", iterations=1000)
       
       # execute functional.betapart.core function identifying each "n" core with the core.ident argument 
-      null.test.score <- try(functional.betapart.core.vfinal(x = null.comm.test, traits = traits.test, multi = TRUE, warning.time = FALSE, 
+      null.test.score <- try(functional.betapart.core.modif(x = null.comm.test, traits = traits.test, multi = TRUE, warning.time = FALSE, 
                                                              return.details = FALSE, fbc.step = FALSE, 
                                                              core.ident = x), silent=TRUE)
     }
