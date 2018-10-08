@@ -137,7 +137,7 @@ for (j in 1:nrow(obs.pair.func.dis)){
     null.pair.temp <- do.call(rbind, lapply(null.pair.func.dis, `[`,j,i)) 
     
     # compute mean of all null values
-    mean.null.pair.func[j,i] < -mean(null.pair.temp)
+    mean.null.pair.func[j,i] <- mean(null.pair.temp)
     # compute standard deviation of all null values
     sd.null.pair.func[j,i] <- sd(null.pair.temp)
     # compute the p-values
