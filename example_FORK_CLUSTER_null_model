@@ -1,5 +1,5 @@
 # EXAMPLE OF A PARALLELIZED NULL MODEL WITH BETA.PAIR USING A FORK CLUSTER
-# Note that FORK cluster are not permitted on Windows, only Linux or OS. This code was only tested on a Linus operating system. 
+# Note that FORK cluster are not permitted on Windows, only Linux or OS. This code was only tested on a Linux operating system. 
 
 # load new function
 # load the functional.betapart.core.modif function.
