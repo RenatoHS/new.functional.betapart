@@ -100,7 +100,7 @@ null.pair.func.dis <- mclapply(1:nc, function(x){
   
   # for each core "n" perform "nt" permutations
   for (j in 1:nt){ 
-    print(j)
+  
     
     # randomize community with chosen null model
     # for this particular example we used the "independent swap algorithm" 
