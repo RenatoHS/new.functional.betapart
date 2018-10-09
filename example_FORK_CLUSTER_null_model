@@ -91,8 +91,7 @@ parallel::clusterExport(cl = cl, c("nperm", "nc", "comm.test", "traits.test",
 # execute mclapply function, which is the parallelized version of lapply. The resulting output will be a list
 # of the same lenght as (1:nc)
 null.pair.func.dis <- mclapply(1:nc, function(x){
-  
-  set.seed(x)
+
   #number of tasks per core (i.e., number of permutations per core)
   nt <- nperm/nc
   
