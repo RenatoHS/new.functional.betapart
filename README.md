@@ -11,5 +11,5 @@ Baselga, A. and C. D. L Orme (2012). betapart: an R package for the study of bet
 Villéger, S., Grenouillet, G. and S. Brosse (2013). Decomposing the functional B-diversity reveals that low functional B-diversity is driven by low functional turnover in European fish assemblages. Global Ecology and Biogeography, 22: 671-681. 
 
 
-This new version allows for external parallelization and is substantially faster than the original one when dealing with # large community matrices.
+This new version allows for external parallelization and is substantially faster than the original one when dealing with large community matrices.
 
